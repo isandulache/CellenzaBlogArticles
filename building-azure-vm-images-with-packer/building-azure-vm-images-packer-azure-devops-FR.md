@@ -13,8 +13,8 @@ Imaginez ne plus devoir attendre 20 minutes que votre VM termine ses mises à jo
 
 Je ferai référence à des fichiers du dossier `base-w2022-datacenter` dans ce dépôt et à deux schémas pour visualiser le flux:
 
-- [Image factory diagram](/media/image-factory.drawio.svg)
-- [Azure Pipelines conceptual diagram](/media/azure-devops-ci-cd-architecture.svg)
+- [Image factory diagram](./media/image-factory.drawio.svg)
+- [Azure Pipelines conceptual diagram](./media/azure-devops-ci-cd-architecture.svg)
 
 ## 2. Pourquoi les images personnalisées comptent toujours
 

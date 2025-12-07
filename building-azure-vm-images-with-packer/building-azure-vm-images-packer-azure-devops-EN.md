@@ -13,8 +13,8 @@ Imagine never having to wait 20 minutes for a VM to finish installing updates be
 
 I will reference files from the `base-w2022-datacenter` folder in this repo and point to two official diagrams so you can visualize the flow:
 
-- [Image factory diagram](/media/image-factory.drawio.svg)
-- [Azure Pipelines conceptual diagram](/media/azure-devops-ci-cd-architecture.svg)
+- [Image factory diagram](./media/image-factory.drawio.svg)
+- [Azure Pipelines conceptual diagram](./media/azure-devops-ci-cd-architecture.svg)
 
 ## 2. Why Custom Images Still Matter
 
