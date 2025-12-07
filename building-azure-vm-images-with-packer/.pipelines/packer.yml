@@ -1,0 +1,82 @@
+# This pipeline is used to build a packer image.
+# It is triggered by changes to the packer definition file or the pipeline file itself.
+
+trigger: # none # Disable CI triggers.
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - ".azure-pipelines/packer.yml"
+      - "packer-images/base-w2022-datacenter"
+
+
+pool:
+  vmImage: ubuntu-latest
+
+parameters:
+- name: environment  # Define a multistring parameter
+  type: string  
+  default: prd  # Default value is 'prd'
+  values:  # Allowed values 
+  - sbx
+  - dev
+  - prd
+- name: paramPackerTemplatePath  # packer definition file path
+  type: string  
+  default: 'packer-images/base-w2022-datacenter'
+- name: paramPackerImageName  # packer image name
+  type: string  
+  default: 'BASE-W2022-DATACENTER'
+- name: paramPackerImageRGName
+  type: string
+  default: 'rg-images'
+
+variables:
+  - group: "My Subscription"
+
+jobs: 
+  - job: Packer
+    timeoutInMinutes: 120  # Timeout max is 2h
+    displayName: 'Build Packer Image'
+
+    steps:
+      - script: |
+          cd "$PACKER_WORKING_FOLDER"
+          packer init .
+        displayName: 'Packer init'
+        env:
+          PACKER_WORKING_FOLDER: ${{ parameters.paramPackerTemplatePath }}
+          ARM_TENANT_ID: '$(ARM_TENANT_ID)'
+          ARM_SUBSCRIPTION_ID: '$(ARM_SUBSCRIPTION_ID)'
+          ARM_CLIENT_ID: '$(ARM_CLIENT_ID)'
+          ARM_CLIENT_SECRET: '$(ARM_CLIENT_SECRET)'
+          PKR_VAR_IMAGE_NAME: "${{ parameters.paramPackerImageName }}-${{ parameters.environment }}"
+          PKR_VAR_IMAGE_RG_NAME: ${{ parameters.paramPackerImageRGName }}
+
+      - script: |
+          cd "$PACKER_WORKING_FOLDER"
+          packer fmt -check -diff .
+          packer validate .
+        displayName: 'Packer validate'
+        env:
+          PACKER_WORKING_FOLDER: ${{ parameters.paramPackerTemplatePath }}
+          ARM_TENANT_ID: '$(ARM_TENANT_ID)'
+          ARM_SUBSCRIPTION_ID: '$(ARM_SUBSCRIPTION_ID)'
+          ARM_CLIENT_ID: '$(ARM_CLIENT_ID)'
+          ARM_CLIENT_SECRET: '$(ARM_CLIENT_SECRET)'
+          PKR_VAR_IMAGE_NAME: "${{ parameters.paramPackerImageName }}-${{ parameters.environment }}"
+          PKR_VAR_IMAGE_RG_NAME: ${{ parameters.paramPackerImageRGName }}
+
+      - script: |
+          cd "$PACKER_WORKING_FOLDER"
+          packer build .
+        displayName: 'Packer build'
+        env:
+          PACKER_WORKING_FOLDER: ${{ parameters.paramPackerTemplatePath }}
+          ARM_TENANT_ID: '$(ARM_TENANT_ID)'
+          ARM_SUBSCRIPTION_ID: '$(ARM_SUBSCRIPTION_ID)'
+          ARM_CLIENT_ID: '$(ARM_CLIENT_ID)'
+          ARM_CLIENT_SECRET: '$(ARM_CLIENT_SECRET)'
+          PKR_VAR_IMAGE_NAME: "${{ parameters.paramPackerImageName }}-${{ parameters.environment }}"
+          PKR_VAR_IMAGE_RG_NAME: ${{ parameters.paramPackerImageRGName }}
