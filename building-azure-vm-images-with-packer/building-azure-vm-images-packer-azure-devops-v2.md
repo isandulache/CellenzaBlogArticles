@@ -161,7 +161,7 @@ All scripts run with the `SYSTEM` account so they can modify services and instal
 
 Traceability saves hours when you debug who baked which image. A simple pattern is:
 
-1. Use `local.computed_tags` inside `source.pkr.hcl` for traceability.
+- Use `local.computed_tags` inside `source.pkr.hcl` for traceability.
 
 ```shell
 locals {
@@ -176,8 +176,8 @@ locals {
 }
 ```
 
-2. From the pipeline, pass `-var "run_id=$(Build.SourceVersion)"` and `-var "image_version=${IMAGE_VERSION}"` so those tags stay accurate.
-3. Publish a `metadata/image-version.json` file (see Step 7) with the version, gallery ID, git commit, and pipeline run.
+- From the pipeline, pass `-var "run_id=$(Build.SourceVersion)"` and `-var "image_version=${IMAGE_VERSION}"` so those tags stay accurate.
+- Publish a `metadata/image-version.json` file (see Step 7) with the version, gallery ID, git commit, and pipeline run.
 
 Now anyone browsing the image in Azure Portal can see its lineage.
 
@@ -316,7 +316,6 @@ Here are the most common issues beginners hit and how to recover:
 | Build hangs on Azure ARM step          | Network latency or missing `azure-arm` plugin                               | Update Packer to latest version and verify plugin installation.                                    |
 | Error: "Authentication failed"         | Service principal credentials expired or wrong environment                   | Refresh SP credentials, verify `tenant_id`, `client_id`, and `client_secret`.                     |
 | Error: "Resource quota exceeded"       | Subscription quota limits reached                                            | Check Azure subscription quotas and request increases if needed.                                   |
-
 
 If all else fails, enable verbose Packer logging using `PACKER_LOG=1` and `PACKER_LOG_PATH=packer-debug.log`. Just remember to disable it once the issue is resolved.
 
