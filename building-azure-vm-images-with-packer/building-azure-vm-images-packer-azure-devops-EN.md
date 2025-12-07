@@ -5,23 +5,23 @@ _Date: December 2025_
 
 ## 1. Introduction
 
-Imagine never having to wait 20 minutes for a VM to finish installing updates before your app can boot. That is the promise of golden images: bake everything once, deploy anywhere. In this guide we will:
+Imagine never having to wait 20 minutes for a VM to finish installing updates before your app can boot. That is the promise of golden images: create everything once, deploy anywhere. In this guide we will:
 
 - Assemble a modular Packer project that targets Windows Server 2022.
 - Run the build from Azure DevOps using YAML pipelines.
 - Publish the finished image into an Azure Compute Gallery (ACG) so any VM, VM Scale Set (VMSS), or Azure Virtual Desktop (AVD) host can consume it.
 
-I will reference real files from the `base-w2022-datacenter` folder in this repo and point to two official Microsoft diagrams so you can visualize the flow:
+I will reference files from the `base-w2022-datacenter` folder in this repo and point to two official diagrams so you can visualize the flow:
 
 - [Image factory diagram](/media/image-factory.drawio.svg)
 - [Azure Pipelines conceptual diagram](/media/azure-devops-ci-cd-architecture.svg)
 
 ## 2. Why Custom Images Still Matter
 
-Before diving into code, let’s be clear about the “why.” Custom images help when:
+Before diving into code, let’s be clear about the "why." Custom images help when:
 
 - **You are fighting long boot times.** Installing .NET, IIS, patches, or language packs during deployment slows down autoscaling or blue/green rollouts.
-- **You need consistency.** Shipping the same pre-hardened OS everywhere reduces drift and “it worked on staging” moments.
+- **You need consistency.** Shipping the same pre-hardened OS everywhere reduces drift and "it worked on staging" moments.
 - **Your auditors want proof.** If CIS (Center for Internet Security Benchmarks) or STIG (Security Technical Implementation Guides) controls are built into an image, you only need to review that pipeline rather than every VM after the fact.
 - **Costs are creeping up.** Faster deployments mean less agent time and fewer failed releases.
 
@@ -53,7 +53,7 @@ Git Repo (Packer + scripts) --> Azure DevOps Pipeline --> Ephemeral Build Resour
 - The Git repo stores the Packer templates, PowerShell scripts, and pipeline YAML.
 - Azure DevOps pulls the repo, runs validation, builds the image, and publishes logs and metadata.
 - Packer spins up a temporary VM, configures it, captures an image, and (optionally) publishes it to an Azure Compute Gallery.
-- Downstream services reference the gallery image by version or “latest,” depending on your rollout policy.
+- Downstream services reference the gallery image by version or "latest," depending on your rollout policy.
 
 ## 5. Step 1 - Explore the Repo Structure
 
@@ -82,7 +82,7 @@ Why separate files?
 
 ## 6. Step 2 - Understand the Variables File
 
-`variables.pkr.hcl` is where we define “things you might change per environment.” Here is a trimmed excerpt:
+`variables.pkr.hcl` is where we define "things you might change per environment." Here is a trimmed excerpt:
 
 ```hcl
 variable "tenant_id" {
@@ -115,12 +115,12 @@ variable "common_tags" {
 What to remember:
 
 - Read Azure credentials from `ARM_*` environment variables so you never hardcode secrets.
-- Provide friendly defaults (`France Central`, `Standard_D4s_v5`, etc.) but expect the pipeline to override them with `PKR_VAR_*` values.
-- Leave gallery-related variables empty until you have an actual gallery in place - this way local tests create only a managed image.
+- Provide defaults (`France Central`, `Standard_D4s_v5`, etc.) but expect the pipeline to override them with `PKR_VAR_*` values.
+- Leave gallery-related variables empty until you have an actual gallery in place - this way the executions create only a managed image.
 
 ## 7. Step 3 - Configure the Builder Block
 
-`source.pkr.hcl` is where we tell Packer how to talk to Azure:
+`source.pkr.hcl` is where we tell Packer how to talk to the Azure VM:
 
 ```hcl
 source "azure-arm" "image" {
@@ -143,7 +143,7 @@ source "azure-arm" "image" {
 
 ## 8. Step 4 - Chain the Provisioners
 
-`build.pkr.hcl` is the “what happens inside the VM” file. Provisioners run in order and each one has a clear responsibility:
+`build.pkr.hcl` is the "what happens inside the VM" file. Provisioners run in order and each one has a clear responsibility:
 
 | Step | File or Inline Block | Why we do it |
 | ---- | -------------------- | ------------ |
@@ -159,7 +159,7 @@ All scripts run with the `SYSTEM` account so they can modify services and instal
 
 ## 9. Step 5 - Tag and Version Everything
 
-Traceability saves hours when you debug who baked which image. A simple pattern is:
+Traceability saves hours when you debug who created which image. A simple pattern is:
 
 - Use `local.computed_tags` inside `source.pkr.hcl` for traceability.
 
@@ -191,7 +191,7 @@ We can use a five-stage pipeline: **Validate → Build → Test → Approve → 
 4. **Approve stage** - Manual gate for production promotion.
 5. **Release stage** - Applies git tags, updates documentation, or triggers downstream deployments.
 
-Note: For simplicity, we run a trimmed version here with just Validate and Build stages. The full YAML is in the repo as `azure-pipelines.yml`.
+Note: For simplicity, we run a trimmed version here with just Validate and Build stages. The full YAML example is found in the repo as `.pipelines/packer.yml`.
 
 ### 10.1 Concerns and Mitigations
 
@@ -201,7 +201,7 @@ Note: For simplicity, we run a trimmed version here with just Validate and Build
 | Different version each run | Have a job calculate `IMAGE_VERSION`, store it via `##vso[task.setvariable]`, and reuse it in every stage. |
 | Slow feedback loops | Run `packer fmt`, `packer init`, and `packer validate -syntax-only` in the Validate stage before doing the heavy build. |
 | Hard to reproduce failures | Publish `build.log`, pipeline summary, and the metadata JSON to artifacts. |
-| “It worked but no one tested it” | Always run the smoke-test VM deployment and curl check before approvals. |
+| "It worked but no one tested it" | Always run the smoke-test VM deployment and curl check before approvals. |
 
 ### 10.2 YAML Excerpt (Trimmed for Clarity)
 
@@ -306,7 +306,7 @@ Here are the most common issues beginners hit and how to recover:
 | Language pack fails                    | Windows Update disabled or package missing                                  | Host CAB files in blob storage and update `Install-FR-Language.ps1` to fetch from there. |
 | Defender update hangs                  | No internet egress                                                          | Use `Update-MpSignature -DefinitionUpdateFile` pointing to an internal share. |
 | Sysprep quits instantly                | Pending updates or services still running                                   | Inspect `C:\Windows\System32\Sysprep\Panther\setuperr.log` and rerun after clearing pending tasks. |
-| Gallery version stuck “Creating”       | Region quota or wrong replication list                                      | Run `az sig image-version show` to inspect `provisioningState` and adjust the replication regions. |
+| Gallery version stuck "Creating"       | Region quota or wrong replication list                                      | Run `az sig image-version show` to inspect `provisioningState` and adjust the replication regions. |
 | WinRM authentication fails             | Wrong username/password or CredSSP not enabled                              | Verify credentials, enable CredSSP, and ensure `winrm` settings match Packer template.            |
 | SSH connection times out               | Port 22 blocked or cloud-init not finished                                  | Check NSG rules, ensure VM is fully provisioned before Packer tries to connect.                   |
 | Azure image build fails at provisioning| Incorrect managed identity or insufficient permissions                       | Assign correct RBAC roles (e.g., Contributor) to the identity used by Packer.                     |
@@ -324,12 +324,12 @@ If all else fails, enable verbose Packer logging using `PACKER_LOG=1` and `PACKE
 - Use the smallest VM size that comfortably completes your provisioning scripts (`Standard_D4s_v5` works well here).
 - Limit gallery replication to regions that actually consume the image. Replication is the biggest hidden cost.
 - Prune old image versions (keep the last N or versions younger than X days) so your gallery stays tidy. Can be automated with Azure CLI in the pipeline.
-- Align scheduled builds with Patch Tuesday plus ad-hoc security releases instead of rebuilding daily for no reason.
+- Align scheduled builds with "Patch Tuesday" plus ad-hoc security releases instead of rebuilding daily for no reason.
 
 ## 14. Final Checklist and Next Steps
 
 1. Clone the repo and run `packer init` + `packer validate` locally to get comfortable.
-2. Customize `variables.pkr.hcl` and the PowerShell scripts so they match your organization’s hardening standards.
+2. Customize `variables.pkr.hcl` and the PowerShell scripts so they match your organization’s project requirements.
 3. Create the Azure DevOps pipeline, connect it to the repo, and test the Validate stage first.
 4. Once the pipeline builds successfully, enable the gallery block, publish metadata, and share the version with your VM/VMSS/AVD teams.
 5. Bookmark the two diagrams linked at the top - they are great references when explaining this flow to teammates or reviewers.
