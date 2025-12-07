@@ -29,14 +29,14 @@ If you want a managed experience, Azure Image Builder is great. However, if you 
 
 ## 3. Tools You Need (and Tested Versions)
 
-| Component | Version / Notes |
-| --------- | --------------- |
-| Packer CLI | 1.14.x (HCL2 syntax with `packer { required_plugins { ... } }`) |
-| Azure Packer plugin | `github.com/hashicorp/azure` >= 2.0.0 |
-| Azure CLI | 2.63+ for smoke tests, gallery checks, and clean-up |
-| Azure DevOps Agent | Hosted `ubuntu-latest` is fine for pipeline jobs |
-| PowerShell inside VM | Windows PowerShell 5.1 (default on Windows Server 2022) |
-| Helpful linters | `packer fmt`, `pwsh` Script Analyzer, `shellcheck` |
+| Component | Version / Notes | Required / Optional / Nice to have |
+| --------- | --------------- | --------------------------------- |
+| Packer CLI | 1.14.x (HCL2 syntax with `packer { required_plugins { ... } }`) | Required |
+| Azure Packer plugin | `github.com/hashicorp/azure` >= 2.0.0 | Required |
+| Azure CLI | 2.63+ for smoke tests, gallery checks, and clean-up | Optional |
+| Azure DevOps Agent | This article is based on `ubuntu-latest` | Required |
+| PowerShell inside VM | Windows PowerShell 5.1 (default on Windows Server 2022) | Required |
+| Helpful linters | `packer fmt`, `pwsh` Script Analyzer, `shellcheck` | Nice to have |
 
 Feel free to use newer versions, but pin them in your pipeline variables so every run behaves the same. When you upgrade, do it intentionally.
 
