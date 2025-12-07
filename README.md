@@ -2,10 +2,8 @@
 
 ## _Author: Julien SANDULACHE_
 
-This is Repository for my Blog Articles published on the [CELLENZA Blog page](https://blog.cellenza.com/).
-
-This repository contains code examples and resources related to various blog articles.
-
+This repository contains my Blog Articles published on the [CELLENZA Blog page](https://blog.cellenza.com/).
+You can find code examples and resources related to my blog articles.
 Each article focuses on different programming concepts, techniques, and best practices.
 
 ## Articles
